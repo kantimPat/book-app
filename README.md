@@ -21,6 +21,11 @@ bun dev
 ### หน้า Book Detail (รายละเอียดหนังสือ)
 ![Book Detail Screenshot](./bookID.png)
 
+# รายละเอียดงาน
+### หน้าแรก
+### แสดงรายการหนังสือ (ชื่อเรื่อง + ผู้แต่ง)
+### มีลิงก์ไปยังหน้ารายละเอียดหนังสือ
+
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
