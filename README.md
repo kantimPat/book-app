@@ -19,7 +19,7 @@ bun dev
 ![Home Screenshot](./bookHOME.png)
 
 ### หน้า Book Detail (รายละเอียดหนังสือ)
-![Book Detail Screenshot](./bookID-detail.png)
+![Book Detail Screenshot](./bookID.png)
 
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
