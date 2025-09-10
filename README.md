@@ -15,7 +15,7 @@ bun dev
 ```
 ## 📸 Screenshots
 
-### หน้า Home (รายการหนังสือ)
+### หน้า Home (รายการหนังสือบางหน้า)
 ![Home Screenshot](./bookHOME.png)
 
 ### หน้า Book Detail (รายละเอียดหนังสือ)
