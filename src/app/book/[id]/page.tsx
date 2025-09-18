@@ -1,96 +1,273 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import {
   Container,
-  Typography,
+  Box,
   Card,
   CardContent,
+  Typography,
+  Stack,
+  Button,
+  Avatar,
+  Paper,
   Chip,
-  Box,
-  CircularProgress,
   Grid,
 } from "@mui/material";
-import type { Book } from "../../../types/book";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+// ใช้ relative path หากยังมี error
+import AuthService from "../../libs/AuthService";
+import { User } from "../../../../types/RegistrationRes";
+import AuthService from "../../libs/AuthService";
 
-export default function BookDetailPage() {
-  const { id } = useParams();
-  const [book, setBook] = useState<Book | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export default function HomePage() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBook = async () => {
-      try {
-        const response = await fetch(`http://localhost:3000/api/books/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setBook(data.book);
+    // ตรวจสอบการ authentication
+    if (!AuthService.isAuthenticated()) {
+      router.push("/book");
+      return;
+    }
+
+    // ดึงข้อมูลผู้ใช้จาก localStorage
+    try {
+      if (typeof window !== 'undefined') {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          setUser(JSON.parse(userData));
+        } else {
+          // ถ้าไม่มีข้อมูลผู้ใช้ ให้กลับไปหน้า login
+          router.push("/book");
         }
-      } catch (error) {
-        console.error("Failed to fetch book", error);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error loading user data:", error);
+      router.push("/book");
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
 
-    if (id) fetchBook();
-  }, [id]);
+  const handleLogout = () => {
+    AuthService.removeToken();
+    router.push("/book");
+  };
 
-  if (isLoading)
+  if (loading) {
     return (
-      <Grid container justifyContent="center" sx={{ mt: 4 }}>
-        <CircularProgress />
-      </Grid>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        }}
+      >
+        <Typography variant="h6" color="white">กำลังโหลด...</Typography>
+      </Box>
     );
+  }
 
-  if (!book)
-    return (
-      <Typography align="center" sx={{ mt: 5 }}>
-        ❌ ไม่พบข้อมูลหนังสือ
-      </Typography>
-    );
+  if (!user) {
+    return null;
+  }
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 5 }}>
-      <Card sx={{ p: 2, boxShadow: 4, borderRadius: 3 }}>
-        <CardContent>
-          <Typography variant="h4" gutterBottom fontWeight="bold">
-            {book.title}
-          </Typography>
-          <Typography variant="subtitle1" gutterBottom color="text.secondary">
-            ✍️ ผู้แต่ง: {book.author}
-          </Typography>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        py: 4,
+      }}
+    >
+      <Container maxWidth="lg">
+        <Grid container spacing={4}>
+          {/* Header Card */}
+          <Grid item xs={12}>
+            <Paper
+              elevation={8}
+              sx={{
+                borderRadius: 3,
+                overflow: "hidden",
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              <Box
+                sx={{
+                  background: "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
+                  color: "white",
+                  p: 3,
+                }}
+              >
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={3}
+                  alignItems="center"
+                  justifyContent="space-between"
+                >
+                  <Stack direction="row" spacing={3} alignItems="center">
+                    <Avatar
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        bgcolor: "rgba(255, 255, 255, 0.2)",
+                        fontSize: "2rem",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {user.username.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h4" fontWeight="bold">
+                        ยินดีต้อนรับ!
+                      </Typography>
+                      <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                        {user.username}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                  <Button
+                    variant="outlined"
+                    color="inherit"
+                    onClick={handleLogout}
+                    sx={{
+                      borderColor: "rgba(255, 255, 255, 0.5)",
+                      color: "white",
+                      "&:hover": {
+                        borderColor: "white",
+                        backgroundColor: "rgba(255, 255, 255, 0.1)",
+                      },
+                    }}
+                  >
+                    ออกจากระบบ
+                  </Button>
+                </Stack>
+              </Box>
+            </Paper>
+          </Grid>
 
-          <Typography variant="body1" paragraph>
-            {book.description}
-          </Typography>
+          {/* User Info Card */}
+          <Grid item xs={12} md={8}>
+            <Card
+              sx={{
+                borderRadius: 3,
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(10px)",
+                boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+              }}
+            >
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  ข้อมูลผู้ใช้
+                </Typography>
+                <Stack spacing={3}>
+                  <Box>
+                    <Typography variant="subtitle2" color="textSecondary">
+                      ชื่อผู้ใช้
+                    </Typography>
+                    <Typography variant="h6" fontWeight="medium">
+                      {user.username}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="textSecondary">
+                      อีเมล
+                    </Typography>
+                    <Typography variant="h6" fontWeight="medium">
+                      {user.email}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="textSecondary">
+                      บทบาท
+                    </Typography>
+                    <Chip
+                      label={user.role || 'user'}
+                      color="primary"
+                      sx={{
+                        mt: 1,
+                        fontWeight: "bold",
+                        background: "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
+                      }}
+                    />
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="textSecondary">
+                      วันที่สมัครสมาชิก
+                    </Typography>
+                    <Typography variant="body1">
+                      {new Date(user.createdAt).toLocaleDateString('th-TH', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <Box mb={2}>
-            <Chip
-              label={`หมวดหมู่: ${book.genre}`}
-              color="primary"
-              sx={{ mr: 1, mb: 1 }}
-            />
-            <Chip label={`ปี: ${book.year}`} sx={{ mr: 1, mb: 1 }} />
-            <Chip label={`ราคา: ${book.price} บาท`} sx={{ mr: 1, mb: 1 }} />
-            <Chip
-              label={book.available ? "✅ มีจำหน่าย" : "❌ หมด"}
-              color={book.available ? "success" : "error"}
-              sx={{ mr: 1, mb: 1 }}
-            />
-          </Box>
-
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            👤 เพิ่มโดย: {book.addedBy.username} ({book.addedBy.email})
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            🕒 สร้างเมื่อ: {new Date(book.createdAt).toLocaleString()}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            🔄 แก้ไขล่าสุด: {new Date(book.updatedAt).toLocaleString()}
-          </Typography>
-        </CardContent>
-      </Card>
-    </Container>
+          {/* Quick Actions Card */}
+          <Grid item xs={12} md={4}>
+            <Card
+              sx={{
+                borderRadius: 3,
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(10px)",
+                boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+                height: "fit-content",
+              }}
+            >
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  เมนูด่วน
+                </Typography>
+                <Stack spacing={2}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    sx={{
+                      py: 1.5,
+                      borderRadius: 2,
+                      background: "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
+                      boxShadow: "0 3px 5px 2px rgba(102, 126, 234, .3)",
+                      "&:hover": {
+                        background: "linear-gradient(45deg, #5a6fd8 30%, #6a4190 90%)",
+                        boxShadow: "0 4px 8px 2px rgba(102, 126, 234, .4)",
+                      },
+                    }}
+                  >
+                    แก้ไขโปรไฟล์
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    sx={{
+                      py: 1.5,
+                      borderRadius: 2,
+                      borderColor: "#667eea",
+                      color: "#667eea",
+                      "&:hover": {
+                        borderColor: "#5a6fd8",
+                        backgroundColor: "rgba(102, 126, 234, 0.04)",
+                      },
+                    }}
+                  >
+                    เปลี่ยนรหัสผ่าน
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
   );
 }
