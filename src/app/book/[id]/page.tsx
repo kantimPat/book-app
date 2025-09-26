@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import AuthService from "../../libs/AuthService";
 import { User } from "../../../../types/RegistrationRes";
 import AuthService from "../../libs/AuthService";
+import Grid from "@mui/material/Grid"; // เพิ่มบรรทัดนี้สำหรับ Grid แบบเก่า
 
 export default function HomePage() {
   const router = useRouter();

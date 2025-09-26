@@ -7,13 +7,23 @@ import {
   CardContent,
   CardActionArea,
   Grid,
-  CircularProgress,
   Box,
   Avatar,
   Fade,
   Skeleton,
   Paper,
-  Chip
+  Button,
+  Modal,
+  Stack,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Switch,
+  FormControlLabel,
+  Alert,
+  Snackbar
 } from "@mui/material";
 import type { BookResponse, Book } from "../types/book";
 import Link from "next/link";
@@ -21,6 +31,21 @@ import Link from "next/link";
 export default function Home() {
   const [booksData, setBooksData] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
+  
+  // Form state for new book
+  const [newBook, setNewBook] = useState<Omit<Book, '_id'>>({
+    title: "",
+    author: "",
+    description: "",
+    genre: "",
+    year: new Date().getFullYear(),
+    price: 0,
+    available: true,
+  });
 
   const getData = async () => {
     try {
@@ -39,6 +64,57 @@ export default function Home() {
   useEffect(() => {
     getData();
   }, []);
+
+  const handleNewBook = async () => {
+    if (!newBook.title || !newBook.author) {
+      setShowError(true);
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      const response = await fetch("http://localhost:3000/api/books", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newBook),
+      });
+
+      if (response.ok) {
+        setShowSuccess(true);
+        setIsNewDialogOpen(false);
+        // Reset form
+        setNewBook({
+          title: "",
+          author: "",
+          description: "",
+          genre: "",
+          year: new Date().getFullYear(),
+          price: 0,
+          available: true,
+        });
+        // Refresh book list
+        await getData();
+      } else {
+        setShowError(true);
+      }
+    } catch (error) {
+      console.error("Failed to add book", error);
+      setShowError(true);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof Omit<Book, '_id'>) => (event: any) => {
+    const value = event.target.value;
+    setNewBook(prev => ({
+      ...prev,
+      [field]: field === 'year' || field === 'price' ? Number(value) : value
+    }));
+  };
 
   // Loading Component
   const LoadingCards = () => (
@@ -165,6 +241,33 @@ export default function Home() {
             >
               ✨ สำรวจโลกแห่งหนังสือที่น่าทึ่ง ✨
             </Typography>
+
+            {/* Add Book Button */}
+            <Button
+              variant="contained"
+              onClick={() => setIsNewDialogOpen(true)}
+              sx={{
+                px: 4,
+                py: 2,
+                mb: 3,
+                borderRadius: 5,
+                background: 'linear-gradient(45deg, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.7) 90%)',
+                color: '#667eea',
+                fontWeight: 600,
+                fontSize: '1.1rem',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                backdropFilter: 'blur(10px)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
+                  background: 'linear-gradient(45deg, rgba(255,255,255,1) 30%, rgba(255,255,255,0.9) 90%)',
+                }
+              }}
+            >
+              ➕ เพิ่มหนังสือใหม่
+            </Button>
 
             {/* Stats Card */}
             {!isLoading && booksData.length > 0 && (
@@ -403,6 +506,220 @@ export default function Home() {
           </Fade>
         )}
       </Container>
+
+      {/* Add New Book Modal */}
+      <Modal 
+        open={isNewDialogOpen} 
+        onClose={() => setIsNewDialogOpen(false)}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Box
+          sx={{
+            width: '90%',
+            maxWidth: 600,
+            maxHeight: '90vh',
+            overflow: 'auto',
+            bgcolor: 'background.paper',
+            borderRadius: 4,
+            boxShadow: '0 24px 80px rgba(0,0,0,0.3)',
+            border: '1px solid rgba(255,255,255,0.3)',
+            background: 'rgba(255,255,255,0.98)',
+            backdropFilter: 'blur(20px)',
+          }}
+        >
+          <Box sx={{ p: 4 }}>
+            <Typography 
+              variant="h4" 
+              sx={{ 
+                mb: 3, 
+                fontWeight: 700,
+                color: '#667eea',
+                textAlign: 'center'
+              }}
+            >
+              📚 เพิ่มหนังสือใหม่
+            </Typography>
+            
+            <Stack spacing={3}>
+              <TextField
+                fullWidth
+                label="ชื่อหนังสือ"
+                required
+                value={newBook.title}
+                onChange={handleInputChange('title')}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+              
+              <TextField
+                fullWidth
+                label="ผู้แต่ง"
+                required
+                value={newBook.author}
+                onChange={handleInputChange('author')}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+              
+              <TextField
+                fullWidth
+                label="คำอธิบาย"
+                multiline
+                rows={3}
+                value={newBook.description}
+                onChange={handleInputChange('description')}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+              
+              <TextField
+                fullWidth
+                label="ประเภท"
+                value={newBook.genre}
+                onChange={handleInputChange('genre')}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+              
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="ปีที่ออกจำหน่าย"
+                  type="number"
+                  value={newBook.year}
+                  onChange={handleInputChange('year')}
+                  sx={{
+                    flex: 1,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
+                />
+                
+                <TextField
+                  label="ราคา (บาท)"
+                  type="number"
+                  value={newBook.price}
+                  onChange={handleInputChange('price')}
+                  sx={{
+                    flex: 1,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
+                />
+              </Box>
+              
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={newBook.available}
+                    onChange={(e) => setNewBook(prev => ({ ...prev, available: e.target.checked }))}
+                    color="primary"
+                  />
+                }
+                label="พร้อมจำหน่าย"
+                sx={{ 
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: '1.1rem',
+                    fontWeight: 500
+                  }
+                }}
+              />
+              
+              <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
+                <Button 
+                  onClick={() => setIsNewDialogOpen(false)}
+                  fullWidth
+                  variant="outlined"
+                  sx={{
+                    py: 1.5,
+                    borderRadius: 3,
+                    fontSize: '1.1rem',
+                    fontWeight: 600
+                  }}
+                >
+                  ยกเลิก
+                </Button>
+                <Button 
+                  variant="contained" 
+                  onClick={handleNewBook}
+                  disabled={isSaving || !newBook.title || !newBook.author}
+                  fullWidth
+                  sx={{
+                    py: 1.5,
+                    borderRadius: 3,
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #5a6fd8 30%, #6a4190 90%)',
+                    },
+                    '&:disabled': {
+                      background: 'rgba(0,0,0,0.12)'
+                    }
+                  }}
+                >
+                  {isSaving ? '🔄 กำลังบันทึก...' : '💾 บันทึก'}
+                </Button>
+              </Stack>
+            </Stack>
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Success Snackbar */}
+      <Snackbar 
+        open={showSuccess} 
+        autoHideDuration={3000} 
+        onClose={() => setShowSuccess(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setShowSuccess(false)} 
+          severity="success" 
+          sx={{ 
+            borderRadius: 3,
+            fontWeight: 500
+          }}
+        >
+          ✅ เพิ่มหนังสือสำเร็จแล้ว!
+        </Alert>
+      </Snackbar>
+
+      {/* Error Snackbar */}
+      <Snackbar 
+        open={showError} 
+        autoHideDuration={3000} 
+        onClose={() => setShowError(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setShowError(false)} 
+          severity="error" 
+          sx={{ 
+            borderRadius: 3,
+            fontWeight: 500
+          }}
+        >
+          ❌ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

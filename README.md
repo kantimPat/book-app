@@ -32,6 +32,39 @@ bun dev
 
 
 
+## API
+
+http://localhost:3000/
+
+## API Document
+
+http://localhost:3000/api-docs
+
+## Mongodb express -> ดูข้อมูลในฐานข้อมูล
+
+http://localhost:8081/
+-> username -> admin
+-> password -> password123
+
+```
+{
+  "username": "teacher",
+  "email": "teacher@kku.ac.th",
+  "password": "password123"
+}
+```
+
+# register
+
+url /register
+
+### new file
+
+/src/app/register/page.tsx
+
+
+
+
 
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
